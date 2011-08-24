@@ -1,6 +1,156 @@
 = strand
 
-Description goes here.
+Strand is a class that wraps Fibers and gives them Thread-like behavior by using EventMachine.
+
+Strand::ConditionVariable provides functionality for Fibers similar to Ruby's built in ConditionVariable for Threads.
+
+== Like Threads
+
+Strand has an interface similar to Thread.
+
+  thread = Thread.new{ 1+2 }
+  thread.join
+  thread.value # => 3
+  
+  strand = Strand.new{ 1+2 }
+  strand.join
+  strand.value # => 3
+
+== Fiber/EventMachine aware sleep
+
+Calling sleep usually results in EventMachine's reactor being blocked, but Strand defines an EM+Fiber safe sleep.
+
+Consider mimicking the following threaded code:
+
+  t1 = Thread.new{ sleep(1) }
+  t2 = Thread.new{ sleep(1) }
+  t1.join
+  t2.join
+  # Roughly 1 second will have passed.
+
+Assuming that EventMachine is running:
+
+  s1 = Strand.new{ Strand.sleep(1) }
+  s2 = Strand.new{ Strand.sleep(1) }
+  s1.join
+  s2.join
+  # Roughly 1 second will have passed.
+
+== Thread local, Fiber local and Strand local variables
+
+Thread local storage is the same as Fiber local storage in Ruby.
+
+  Thread.current[:name] = "callie"
+  Fiber.current[:name]  # => "callie"
+  Fiber.current[:name]  = "coco"
+  Thread.current[:name] # => "coco"
+
+Strand provides its own storage.
+
+  Thread.current[:name] = "callie"
+  Strand.current[:name] = "coco"
+  Thread.current[:name] # => "callie"
+  Strand.current[:name] # => "coco"
+
+== Strand.list
+
+Ruby provides a way to get a list of all living Threads:
+
+  Thread.new{ sleep }
+  Thread.list # => [#<Thread:0x007f9343869da8 run>, #<Thread:0x007f934405eec8 sleep>]
+
+There is no equivalent to find all living Fibers.
+
+There is a way to find all living Strands though:
+
+  Strand.new do
+    Strand.new{ Strand.yield }
+    Strand.list # => [#<Strand:0x70358087608460 run, #<Strand:0x70358087608280 yielded]
+  end
+
+== Strand.pass
+
+Consider the following threaded code:
+
+  Thread.new do
+    puts 1
+    Thread.pass
+    puts 2
+    Thread.pass
+    puts 3
+  end
+  Thread.new do
+    puts 1
+    Thread.pass
+    puts 2
+    Thread.pass
+    puts 3
+  end
+
+Or similarly:
+
+  Thread.new do
+    puts 1
+    sleep(0.01)
+    puts 2
+    sleep(0.01)
+    puts 3
+  end
+  Thread.new do
+    puts 1
+    sleep(0.01)
+    puts 2
+    sleep(0.01)
+    puts 3
+  end
+
+How would you do that with fibers?
+
+  Fiber.new do
+    puts 1
+    Fiber.yield
+    puts 2
+    Fiber.yield
+    puts 3
+  end.resume
+  Fiber.new do
+    puts 1
+    Fiber.yield
+    puts 2
+    Fiber.yield
+    puts 3
+  end.resume
+
+That doesn't work.  The fibers are yielding, but nothing is resuming them.  The output is just:
+
+  1
+  1
+
+Enter <tt>Strand.pass</tt>.  It yields the fiber, but tells EventMachine to resume it on the next tick.
+
+  Strand.new do
+    puts 1
+    Strand.pass
+    puts 2
+    Strand.pass
+    puts 3
+  end
+  Strand.new do
+    puts 1
+    Strand.pass
+    puts 2
+    Strand.pass
+    puts 3
+  end
+
+The output is:
+
+  1
+  1
+  2
+  2
+  3
+  3
 
 == Contributing to strand
  
