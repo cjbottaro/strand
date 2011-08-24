@@ -46,3 +46,7 @@ pkg
 
 # For rubinius:
 #*.rbc
+
+vendor/bundle
+vendor/cache
+.rbenv-version
