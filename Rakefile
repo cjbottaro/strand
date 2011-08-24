@@ -17,8 +17,8 @@ Jeweler::Tasks.new do |gem|
   gem.name = "strand"
   gem.homepage = "http://github.com/cjbottaro/strand"
   gem.license = "MIT"
-  gem.summary = %Q{TODO: one-line summary of your gem}
-  gem.description = %Q{TODO: longer description of your gem}
+  gem.summary = %Q{Make fibers behave like threads using EventMachine.}
+  gem.description = %Q{Get thread-like behavior from fibers using EventMachine.}
   gem.email = "cjbottaro@alumni.cs.utexas.edu"
   gem.authors = ["Christopher J. Bottaro"]
   # dependencies defined in Gemfile
