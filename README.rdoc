@@ -59,7 +59,7 @@ Ruby provides a way to get a list of all living Threads:
   Thread.new{ sleep }
   Thread.list # => [#<Thread:0x007f9343869da8 run>, #<Thread:0x007f934405eec8 sleep>]
 
-There is no equivalent to find all living Fibers.
+There is no equivalent for finding all living Fibers.
 
 There is a way to find all living Strands though:
 
@@ -151,6 +151,10 @@ The output is:
   2
   3
   3
+
+== RDoc
+
+{\http://doc.stochasticbytes.com/strand/index.html}[http://doc.stochasticbytes.com/strand/index.html]
 
 == Contributing to strand
  
