@@ -8,11 +8,23 @@ rescue Bundler::BundlerError => e
   exit e.status_code
 end
 require 'test/unit'
-require 'shoulda'
 
 $LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
 $LOAD_PATH.unshift(File.dirname(__FILE__))
 require 'strand'
 
 class Test::Unit::TestCase
+
+  def self.test(name, &block)
+    name = "test_#{name}" unless name[0,5] == "test_"
+    define_method(name) do
+      EM.run do
+        Fiber.new do
+          instance_eval(&block)
+          EM.stop
+        end.resume
+      end
+    end
+  end
+
 end
