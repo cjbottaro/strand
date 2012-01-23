@@ -92,7 +92,7 @@ class Strand
   #     ...
   #   end
   def [](name)
-    @locals[name]
+    @locals[name.to_sym]
   end
 
   # Access to "strand local" variables, akin to "thread local" variables.
@@ -102,7 +102,17 @@ class Strand
   #     ...
   #   end
   def []=(name, value)
-    @locals[name] = value
+    @locals[name.to_sym] = value
+  end
+
+  # Is there a "strand local" variable defined called "name"
+  def key?(name)
+    @locals.has_key?(name.to_sym)
+  end
+
+  # The set of "strand local" variable keys
+  def keys()
+    @locals.keys
   end
 
   def inspect #:nodoc:
