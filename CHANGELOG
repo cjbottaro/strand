@@ -1,0 +1,10 @@
+0.2.0
+	* Strand.yield can now take arguments
+	* Strand.resume can now take arguments
+	* Final call to Strand#resume will return strand's value (or exception)
+	* Added Strand#key?
+	* Normalize access to strand local variables (converts everything to symbols
+	interally)
+
+* 0.1.0
+	Initial version

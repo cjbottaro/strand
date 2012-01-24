@@ -105,7 +105,7 @@ class Strand
     @locals[name.to_sym] = value
   end
 
-  # Is there a "strand local" variable defined called "name"
+  # Is there a "strand local" variable defined called +name+
   def key?(name)
     @locals.has_key?(name.to_sym)
   end
