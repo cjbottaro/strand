@@ -27,8 +27,8 @@ class Strand
   end
 
   # Alias for Fiber.yield.
-  def self.yield
-    Fiber.yield
+  def self.yield(*args)
+    Fiber.yield(*args)
   end
 
   # Yield the strand, but have EM resume it on the next tick.
@@ -69,8 +69,8 @@ class Strand
   end
 
   # Like Fiber#resume.
-  def resume
-    @fiber.resume
+  def resume(*args)
+    @fiber.resume(*args)
   end
 
   # Like Thread#alive? or Fiber#alive?
@@ -137,6 +137,8 @@ protected
 
     # Resume anyone who called join on us.
     @join_cond.signal
+
+    @value || @exception
   end
 
 end
