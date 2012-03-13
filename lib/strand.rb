@@ -2,6 +2,7 @@ require "fiber"
 require "eventmachine"
 require "strand/condition_variable"
 require "strand/queue"
+require "strand/mutex"
 
 class Strand
 
