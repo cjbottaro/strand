@@ -9,20 +9,18 @@ class Strand
         end
 
         def lock()
-            fiber = Fiber.current
-            @waiters << fiber
-
-            Fiber.yield unless @waiters.first == fiber
-            self.class.acquired(fiber,self) 
+            strand = Strand.current
+            @waiters << strand
+            strand.send(:yield_sleep) unless @waiters.first == strand
+            # Now strand has the lock, make sure it is released if the strand dies
+            strand.ensure_hook(self) { release() unless waiters.empty? || waiters.first != strand } 
             self
         end
 
         def unlock()
-            fiber = Fiber.current
-
-            raise FiberError, "not current" unless @waiters.first == fiber
-
-            self.class.released(fiber,self)
+            strand = Strand.current
+            raise FiberError, "not owner" unless @waiters.first == strand
+            release()
         end
 
         def locked?
@@ -42,47 +40,24 @@ class Strand
 
         def sleep(timeout=nil)
             unlock
-            Strand.sleep(timeout)
-            lock
-            timeout.round()
-        end
-
-        def self.acquired(fiber,mutex)
-            start_lock_reaper(fiber)
-            @fibers[fiber]  << mutex
-        end
-
-        def self.released(fiber,mutex)
-            @fibers[fiber].delete(mutex)
-            if @fibers[fiber].size == 1
-                @fibers[fiber][0].cancel
-                @fibers.delete(fiber)
-            end
-            unlock(fiber,mutex)
-        end
-
-        def self.unlock(fiber,mutex)
-            waiters = mutex.instance_variable_get(:@waiters)
-            waiters.shift
-            EM.next_tick { waiters.first.resume } unless waiters.empty?
-        end
-
-        def self.start_lock_reaper(fiber)
-            #TODO Generalise this on Strand itself
-            # ie register block to call on fiber_body death
-            # if Fiber doesn't belong to a Strand then use
-            # this periodic timer technique
-            unless @fibers[fiber]
-                timer = EM.add_periodic_timer(0.5) { reap(fiber) }
-                @fibers[fiber] = [ timer ]
+            begin
+                 Strand.sleep(timeout)
+                 if timeout.nil? then 0 else timeout.round() end
+            ensure
+                lock
             end
         end
+    
+        private
+            attr_reader :waiters
 
-        def self.reap(fiber)
-            unless fiber.alive?
-                locks = @fibers.delete(fiber)
-                locks.shift.cancel
-                locks.each { |m| unlock(fiber,m) }
+        def release()
+            # release the current lock holder, and clear the strand death hook
+            waiters.shift.ensure_hook(self) 
+
+            EM.next_tick do
+                waiters.shift until waiters.empty? || waiters.first.alive?
+                waiters.first.send(:wake_resume) unless waiters.empty?
             end
         end
     end

@@ -38,7 +38,6 @@ describe Strand::Mutex do
 
         #GG there's no test for this in rubyspec
         # but there is a test below for locked?
-
         it "acquires a lock previously held by a dead Fiber" do
             m = Strand::Mutex.new
 
@@ -54,6 +53,31 @@ describe Strand::Mutex do
             s2.join
         end
 
+        it "acquires a lock previously held by a killed Fiber" do
+            m = Strand::Mutex.new
+            m.lock
+
+            s1 = Strand.new { m.lock; Strand.sleep }
+            s2 = Strand.new { m.lock; }
+
+            m.unlock
+            s1.kill
+            s2.join
+        end
+
+        it "acquires a lock in a queue behind a killed Fiber" do
+
+            m = Strand::Mutex.new
+            m.lock
+            s1 = Strand.new { m.lock }
+            s2 = Strand.new { m.lock }
+            s3 = Strand.new { m.lock }
+
+            s2.kill
+            m.unlock
+            s3.join
+
+        end
     end
 
     context :unlock do
@@ -85,7 +109,8 @@ describe Strand::Mutex do
             end
 
             s.join
-
+            #TODO This doesn't make sense, because it would raise error
+            # as per above test
             lambda { mutex.unlock }.should raise_error(FiberError)
         end
     end
@@ -184,7 +209,7 @@ describe Strand::Mutex do
             duration = 0.1
             start = Time.now
             m.sleep duration
-            (Time.now - start).should be_close(duration, 0.1)
+            (Time.now - start).should be_within(0.1).of(duration)
         end
 
         it "unlocks the mutex while sleeping" do
