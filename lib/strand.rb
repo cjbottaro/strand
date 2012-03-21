@@ -23,6 +23,7 @@ class Strand
     attr_reader :fiber
 
     # Return an array of all Strands that are alive.
+    # TODO - check for alive? because a ProxyStrand might be dead
     def self.list
         @@strands.values
     end
@@ -41,8 +42,8 @@ class Strand
     # EM/fiber safe sleep.
     def self.sleep(seconds=nil)
         strand = Strand.current
-        timer = EM::Timer.new(seconds){ strand.send(:wake_resume) } if seconds
-        strand.send(:yield_sleep,timer)
+        timer = EM::Timer.new(seconds){ strand.__send__(:wake_resume) } if seconds
+        strand.__send__(:yield_sleep,timer)
     end
 
     def self.stop
@@ -53,8 +54,8 @@ class Strand
     # The strand is resume on the next_tick of EM's event loop
     def self.pass
         strand = Strand.current
-        EM.next_tick{ strand.send(:wake_resume) }
-        strand.send(:yield_sleep)
+        EM.next_tick{ strand.__send__(:wake_resume) }
+        strand.__send__(:yield_sleep)
     end
 
     # Create and run a strand.
@@ -75,9 +76,9 @@ class Strand
     #   s1.join
     #   s2.join
     def join(limit = nil)
-        join_result = if alive? && !@join_cond.wait(limit) then nil else self end
+        @mutex.synchronize { @join_cond.wait(@mutex,limit) } if alive?
         Kernel.raise @exception if @exception
-        join_result 
+        if alive? then nil else self end
     end
 
     # Like Fiber#resume.
@@ -218,11 +219,12 @@ class Strand
         @@strands.delete(@fiber)
 
         # Resume anyone who called join on us.
-        @join_cond.signal
+        # the synchronize is not really necessary for fibers
+        # but does no harm
+        @mutex.synchronize { @join_cond.signal() }
 
         @value || @exception
     end
-
     private
 
     def init(fiber)
@@ -239,8 +241,9 @@ class Strand
         # Hooks to run when the strand dies (eg by Mutex to release locks)
         @ensure_hooks = {}
 
-        # Condition variable for joining.
-        @join_cond = ConditionVariable.new
+        # Condition variable and mutex for joining.
+        @mutex =  Mutex.new()
+        @join_cond = ConditionVariable.new()
 
     end
     def yield_sleep(timer=nil)

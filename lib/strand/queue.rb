@@ -25,6 +25,7 @@ class Strand
 
         # Creates a new queue
         def initialize
+            @mutex = ::Strand::Mutex.new()            
             @cv = ::Strand::ConditionVariable.new()
             @q = []
             @waiting = 0
@@ -33,7 +34,7 @@ class Strand
         # Pushes +obj+ to the queue
         def push(obj)
             @q << obj
-            @cv.signal
+            @mutex.synchronize { @cv.signal }
         end
         alias :<< :push
         alias :enq :push
@@ -49,7 +50,7 @@ class Strand
             raise FiberError, "queue empty" if non_block && empty?
             if empty?
                 @waiting += 1
-                @cv.wait if empty?
+                @mutex.synchronize { @cv.wait(@mutex) if empty? }
                 @waiting -= 1
             end
             # array.pop is like a stack, we're a FIFO

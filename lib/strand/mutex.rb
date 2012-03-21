@@ -10,6 +10,7 @@ class Strand
 
         def lock()
             strand = Strand.current
+            #TODO - reentrant locks?
             @waiters << strand
             strand.send(:yield_sleep) unless @waiters.first == strand
             # Now strand has the lock, make sure it is released if the strand dies
