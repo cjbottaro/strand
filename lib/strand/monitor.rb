@@ -1,3 +1,4 @@
+# TODO fix the documentation
 # = monitor.rb
 #
 # Copyright (C) 2001  Shugo Maeda <shugo@ruby-lang.org>
@@ -151,7 +152,7 @@ module Strand
 
             def initialize(monitor)
                 @monitor = monitor
-                @cond = Strand::ConditionVariable.new
+                @cond = ConditionVariable.new
             end
         end
 
@@ -237,12 +238,12 @@ module Strand
         def mon_initialize
             @mon_owner = nil
             @mon_count = 0
-            @mon_mutex = Strand::Mutex.new
+            @mon_mutex = Mutex.new
         end
 
         def mon_check_owner
             if @mon_owner != Strand.current
-                raise FiberError, "current thread not owner"
+                raise Strand.delegate_class(ThreadError,FiberError), "current thread not owner"
             end
         end
 

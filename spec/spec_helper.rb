@@ -1,3 +1,4 @@
+require 'eventmachine'
 require 'strand'
 require 'bundler'
 Bundler.require(:development)

@@ -1,11 +1,12 @@
-class Channel < Strand::Queue
+
+class Channel < Strand::EM::Queue
     alias receive shift
 end
 
 
 module StrandSpecs
 
-  class SubStrand < Strand
+  class SubStrand < Strand::EM::Thread
     def initialize(*args)
       super { args.first << 1 }
     end

@@ -1,4 +1,4 @@
-class Strand
+module Strand
   class Atc #:nodoc:
     
     def initialize(options = {})

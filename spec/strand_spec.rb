@@ -9,17 +9,31 @@ require 'strand/raise'
 def quarantine!(&specs)
     #Nothing
 end
+include EM::SpecHelper
 
 describe Strand do
-    include EM::SpecHelper
 
     around(:each) do |example|
-        em do
-            ScratchPad.clear
-            example.run
-            done
-        end
+       ScratchPad.clear
+       em do
+           example.run
+           done
+       end
     end
+
+    it "uses EM::Thread" do
+        Strand::THREAD.should == Strand::EM::Thread
+        EM.reactor_running?.should be_true
+        EM.reactor_thread?.should be_true
+        Strand.event_machine?.should be_true
+        Strand.delegate_class(Thread,Strand::EM::Thread).should == Strand::EM::Thread
+        s = Strand.new() do 
+               Strand.current.should be_kind_of(Strand::EM::Thread)
+            end
+        s.join(1)
+        done
+    end
+
 
     include_examples "Strand#status"
     include_examples "Strand#exit"
