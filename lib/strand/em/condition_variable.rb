@@ -12,13 +12,20 @@ module Strand
             # against race conditions when the signal occurs between testing whether
             # a wait is needed and waiting. This situation will never occur with
             # fibers, but the semantic is retained 
-            def wait(mutex,timeout = nil)
+            def wait(mutex=nil,timeout = nil)
+
+                if timeout.nil? && (mutex.nil? || Numeric === mutex)
+                    timeout = mutex
+                    mutex = nil
+                end
+
                 # Get the fiber that called us.
                 strand = Thread.current
                 # Add the fiber to the list of waiters.
                 @waiters << strand
                 begin
-                    mutex.sleep(timeout)
+                    sleeper = mutex ? mutex : Thread
+                    sleeper.sleep(timeout)
                 ensure
                     # Remove from list of waiters.
                     @waiters.delete(strand)
