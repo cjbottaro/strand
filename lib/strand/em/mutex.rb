@@ -8,8 +8,8 @@ module Strand
 
             def lock()
                 strand = Thread.current
-                #TODO - reentrant locks?
                 @waiters << strand
+                #The lock allows reentry but requires matching unlocks 
                 strand.send(:yield_sleep) unless @waiters.first == strand
                 # Now strand has the lock, make sure it is released if the strand dies
                 strand.ensure_hook(self) { release() unless waiters.empty? || waiters.first != strand } 

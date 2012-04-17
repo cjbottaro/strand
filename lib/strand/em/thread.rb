@@ -12,16 +12,17 @@ module Strand
 
             @@strands = {}
 
-            # The strand's underlying fiber.
+            # The underlying fiber.
             attr_reader :fiber
 
-            # Return an array of all Strands that are alive.
+            # Return an array of all EM::Threads that are alive.
             # TODO - check for alive? because a ProxyThread might be dead
             def self.list
                 @@strands.values
             end
 
-            # Get the currently running strand.  Primarily used to access "strand local" variables.
+            # Get the currently running EM::Thread, eg to access thread local
+            # variables
             def self.current
                 @@strands[Fiber.current] || ProxyThread.new(Fiber.current)
             end
@@ -39,19 +40,20 @@ module Strand
                 strand.__send__(:yield_sleep,timer)
             end
 
+            # Sleep forever (until woken)
             def self.stop
                 self.sleep()
             end
 
             # EM/fiber safe pass
-            # The strand is resume on the next_tick of EM's event loop
+            # The fiber is resumed on the next_tick of EM's event loop
             def self.pass
                 strand = current
                 ::EM.next_tick{ strand.__send__(:wake_resume) }
                 strand.__send__(:yield_sleep)
             end
 
-            # Create and run a strand.
+            # Create and run 
             def initialize(*args,&block)
 
                 # Create our fiber.
@@ -86,19 +88,20 @@ module Strand
                 fiber.alive?
             end
 
+            # Is this Thread stopped? (always unless our fiber is the current fiber)
             def stop?
-                #by definition anything except the current fiber is stopped
                 Fiber.current != fiber
             end
 
+            # Like Thread#status
             def status
                 case @status
                 when :run
-                    #TODO - only if the current thread, otherwise
+                    #TODO - if not the current fiber
                     # we can only be in this state due to a yield on the
                     # underlying fiber, which means we are actually in sleep
-                    # or actually a proxy strand could be dead and not yet
-                    # detected
+                    # or we're a ProxyThread that is dead and not yet
+                    # cleaned up
                     "run"
                 when :sleep
                     "sleep"
@@ -116,6 +119,7 @@ module Strand
                 join and @value
             end
 
+            #
             def exit
                 case @status
                 when :sleep

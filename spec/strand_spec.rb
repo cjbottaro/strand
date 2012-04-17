@@ -22,11 +22,9 @@ describe Strand do
     end
 
     it "uses EM::Thread" do
-        Strand::THREAD.should == Strand::EM::Thread
         EM.reactor_running?.should be_true
-        EM.reactor_thread?.should be_true
         Strand.event_machine?.should be_true
-        Strand.delegate_class(Thread,Strand::EM::Thread).should == Strand::EM::Thread
+        Strand.delegate_class(::Thread).should == Strand::EM::Thread
         s = Strand.new() do 
                Strand.current.should be_kind_of(Strand::EM::Thread)
             end
