@@ -1,11 +1,11 @@
-$LOAD_PATH.unshift(File.join(File.dirname(__FILE__), '..', 'lib'))
-$LOAD_PATH.unshift(File.dirname(__FILE__))
+require 'eventmachine'
 require 'strand'
+require 'bundler'
 Bundler.require(:development)
 
-# Requires supporting files with custom matchers and macros, etc,
-# in ./support/ and its subdirectories.
-Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
+require 'support/scratch'
+require 'support/fixtures'
+
 
 RSpec.configure do |config|
   config.mock_with :rr
